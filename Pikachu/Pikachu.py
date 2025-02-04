@@ -1,5 +1,4 @@
-# INSTRUCTION: Just need to change this path and can run game
-PATH = r'C:\Users\huynh\Downloads\Pikachu'
+PATH = r'.'
 
 import pygame, sys, json, random, copy, time, collections, os
 from pygame.locals import *
