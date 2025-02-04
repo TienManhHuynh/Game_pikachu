@@ -11,7 +11,7 @@ WINDOWHEIGHT = 720
 BOXSIZE = 55
 BOARDWIDTH = 14
 BOARDHEIGHT = 10
-NUMSAMEHEROES = 2
+NUMSAMEHEROES = 4
 NUMHEROES_ONBOARD = (BOARDHEIGHT - 2) * (BOARDWIDTH - 2) // NUMSAMEHEROES
 TIMEBAR_LENGTH = 300
 TIMEBAR_WIDTH = 30
@@ -540,6 +540,7 @@ def login(screen_width=1280, screen_height=720):
 
     pygame.quit()
 
+
 def menu_setting():
     pygame.init()
     man_hinh = pygame.display.set_mode((1280, 720))
@@ -548,11 +549,14 @@ def menu_setting():
     # Tải hình nền
     hinh_nen = pygame.image.load('./background/background.png')
     hinh_nen = pygame.transform.scale(hinh_nen, (1280, 720))
+    QUIT_ICON = pygame.image.load("assets/Back.png").convert_alpha()
+    QUIT_ICON = pygame.transform.scale(QUIT_ICON, (80, 80))
 
     # Sử dụng font chữ tùy chỉnh
-    font = pygame.font.Font(None, 32)
-    font_thong_bao = pygame.font.Font(None, 28)
-
+    font = pygame.font.Font(None, 50)
+    font_thong_bao = pygame.font.Font("assets/font.ttf", 30)
+    font_numbers = pygame.font.Font("assets/font.ttf", 28)  # Font for numbers
+    font_start = pygame.font.Font("assets/font.ttf", 23)
     # Màu sắc
     mau_trang = (255, 255, 255)
     mau_do = (255, 0, 0)
@@ -560,109 +564,141 @@ def menu_setting():
     mau_vang = (255, 255, 0)
     mau_den = (0, 0, 0)
 
-    # Danh sách các lựa chọn cho từng thông số
+    # Tạo nền nút với góc bo tròn
+    def create_button_image(size, color, border_radius):
+        image = pygame.Surface(size, pygame.SRCALPHA)
+        pygame.draw.rect(image, color, (0, 0, *size), border_radius=border_radius)
+        return image
+
+    # Kích thước và hình dáng nút
+    button_width, button_height = 200, 70
+    border_radius = 15
+    start_button_size = (300, 80)
+
     thong_so_1 = ['4', '6', '8', '10']
     thong_so_2 = ['8', '10', '12', '14']
 
-    # Tạo các nút cho từng thông số
+    # Tạo các nút sử dụng lớp Button
     nut_thong_so_1 = []
     nut_thong_so_2 = []
-
-    # Tính toán vị trí cho các nút
-    so_luong_nut = len(thong_so_1)
+    so_luong_nut = 4
     khoang_cach = man_hinh.get_width() // (so_luong_nut + 1)
 
+    # Tạo nút cho Thông Số 1
     for i, ts in enumerate(thong_so_1):
-        rect = pygame.Rect(0, 0, 150, 50)
-        rect.center = (khoang_cach * (i + 1), 150)
-        nut_thong_so_1.append({'text': ts, 'rect': rect})
+        x_pos = khoang_cach * (i + 1)
+        btn_image = pygame.image.load('assets/SIZE.png')
+        nut = Button(
+            image=btn_image,
+            pos=(x_pos, 150),
+            text_input=ts,
+            font=font_numbers,
+            base_color="#d7fcd4",
+            hovering_color="White"
+        )
+        nut_thong_so_1.append(nut)
 
+    # Tạo nút cho Thông Số 2
     for i, ts in enumerate(thong_so_2):
-        rect = pygame.Rect(0, 0, 150, 50)
-        rect.center = (khoang_cach * (i + 1), 250)
-        nut_thong_so_2.append({'text': ts, 'rect': rect})
+        x_pos = khoang_cach * (i + 1)
+        btn_image = pygame.image.load('assets/SIZE.png')
+        nut = Button(
+            image=btn_image,
+            pos=(x_pos, 250),
+            text_input=ts,
+            font=font_numbers,
+            base_color="#d7fcd4",
+            hovering_color="White"
+        )
+        nut_thong_so_2.append(nut)
 
-    # Nút "Bắt Đầu Game"
-    rect_start = pygame.Rect(0, 0, 200, 60)
-    rect_start.center = (man_hinh.get_width() // 2, 400)
-    nut_bat_dau = {'text': 'Start playing', 'rect': rect_start}
+    # Nút Start
+    start_btn_image = pygame.image.load('assets/SIZE2.png')
+    nut_bat_dau = Button(
+        image=start_btn_image,
+        pos=(man_hinh.get_width() // 2, 400),
+        text_input="Start playing",
+        font=font_start,
+        base_color="#d7fcd4",
+        hovering_color="White"
+    )
 
     thong_so_da_chon = {'Thông Số 1': None, 'Thông Số 2': None}
     thong_bao = ''
     chay = True
+    Back_BUTTON = Button(
+        image=QUIT_ICON,
+        pos=(QUIT_ICON.get_width() // 2 + 20, QUIT_ICON.get_height() // 2 + 20),
+        text_input="",
+        font=get_font(75),
+        base_color="#d7fcd4",
+        hovering_color="White"
+    )
+
     while chay:
-        for su_kien in pygame.event.get():
-            if su_kien.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif su_kien.type == pygame.MOUSEBUTTONDOWN:
-                vi_tri_chuot = su_kien.pos
-                # Kiểm tra các nút Thông Số 1
-                for nut in nut_thong_so_1:
-                    if nut['rect'].collidepoint(vi_tri_chuot):
-                        thong_so_da_chon['Thông Số 1'] = nut['text']
-                # Kiểm tra các nút Thông Số 2
-                for nut in nut_thong_so_2:
-                    if nut['rect'].collidepoint(vi_tri_chuot):
-                        thong_so_da_chon['Thông Số 2'] = nut['text']
-                # Kiểm tra nút "Bắt Đầu Game"
-                if nut_bat_dau['rect'].collidepoint(vi_tri_chuot):
-                    if thong_so_da_chon['Thông Số 1'] and thong_so_da_chon['Thông Số 2']:
-                        chay = False  # Thoát vòng lặp để bắt đầu game
-                    else:
-                        thong_bao = "Table's height or width haven't been chosen"
-
-        vi_tri_chuot = pygame.mouse.get_pos()
-
-        # Vẽ hình nền
         man_hinh.blit(hinh_nen, (0, 0))
+        MENU_MOUSE_POS = pygame.mouse.get_pos()
 
         # Vẽ tiêu đề
-        tieu_de = font.render("Choose table's height and width", True, mau_vang)
+        tieu_de = font_thong_bao.render("Choose table's height and width", True, mau_vang)
         rect_tieu_de = tieu_de.get_rect(center=(man_hinh.get_width() // 2, 50))
         man_hinh.blit(tieu_de, rect_tieu_de)
 
-        # Vẽ thông báo nếu có
+        # Vẽ thông báo
         if thong_bao:
             text_thong_bao = font_thong_bao.render(thong_bao, True, mau_do)
             rect_thong_bao = text_thong_bao.get_rect(center=(man_hinh.get_width() // 2, 350))
             man_hinh.blit(text_thong_bao, rect_thong_bao)
 
-        # Vẽ các nút Thông Số 1
+        # Cập nhật và vẽ các nút
+        # Xử lý nút Thông Số 1
         for nut in nut_thong_so_1:
-            mau = mau_trang
-            if nut['rect'].collidepoint(vi_tri_chuot):
-                mau = mau_do
-            if thong_so_da_chon['Thông Số 1'] == nut['text']:
-                mau = mau_xanh
-            pygame.draw.rect(man_hinh, mau, nut['rect'])
-            pygame.draw.rect(man_hinh, mau_den, nut['rect'], 2)  # Viền đen
-            text_surf = font.render(nut['text'], True, mau_den)
-            text_rect = text_surf.get_rect(center=nut['rect'].center)
-            man_hinh.blit(text_surf, text_rect)
+            nut.changeColor(MENU_MOUSE_POS)
+            nut.update(man_hinh)
+            # Kiểm tra trạng thái chọn cho Thông Số 1
+            if nut.text_input == thong_so_da_chon['Thông Số 1']:
+                pygame.draw.rect(man_hinh, mau_xanh, nut.rect, border_radius=border_radius, width=3)
 
-        # Vẽ các nút Thông Số 2
+        # Xử lý nút Thông Số 2
         for nut in nut_thong_so_2:
-            mau = mau_trang
-            if nut['rect'].collidepoint(vi_tri_chuot):
-                mau = mau_do
-            if thong_so_da_chon['Thông Số 2'] == nut['text']:
-                mau = mau_xanh
-            pygame.draw.rect(man_hinh, mau, nut['rect'])
-            pygame.draw.rect(man_hinh, mau_den, nut['rect'], 2)
-            text_surf = font.render(nut['text'], True, mau_den)
-            text_rect = text_surf.get_rect(center=nut['rect'].center)
-            man_hinh.blit(text_surf, text_rect)
+            nut.changeColor(MENU_MOUSE_POS)
+            nut.update(man_hinh)
+            # Kiểm tra trạng thái chọn cho Thông Số 2
+            if nut.text_input == thong_so_da_chon['Thông Số 2']:
+                pygame.draw.rect(man_hinh, mau_xanh, nut.rect, border_radius=border_radius, width=3)
 
-        # Vẽ nút "Bắt Đầu Game"
-        mau = mau_trang
-        if nut_bat_dau['rect'].collidepoint(vi_tri_chuot):
-            mau = mau_do
-        pygame.draw.rect(man_hinh, mau, nut_bat_dau['rect'])
-        pygame.draw.rect(man_hinh, mau_den, nut_bat_dau['rect'], 2)
-        text_surf = font.render(nut_bat_dau['text'], True, mau_den)
-        text_rect = text_surf.get_rect(center=nut_bat_dau['rect'].center)
-        man_hinh.blit(text_surf, text_rect)
+
+        nut_bat_dau.changeColor(MENU_MOUSE_POS)
+        nut_bat_dau.update(man_hinh)
+
+        Back_BUTTON.changeColor(MENU_MOUSE_POS)
+        Back_BUTTON.update(man_hinh)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if Back_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    login()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # Xử lý click cho Thông Số 1
+                for nut in nut_thong_so_1:
+                    if nut.checkForInput(MENU_MOUSE_POS):
+                        thong_so_da_chon['Thông Số 1'] = nut.text_input
+
+                # Xử lý click cho Thông Số 2
+                for nut in nut_thong_so_2:
+                    if nut.checkForInput(MENU_MOUSE_POS):
+                        thong_so_da_chon['Thông Số 2'] = nut.text_input
+
+                # Xử lý nút Start
+                if nut_bat_dau.checkForInput(MENU_MOUSE_POS):
+                    if thong_so_da_chon['Thông Số 1'] and thong_so_da_chon['Thông Số 2']:
+                        chay = False
+                    else:
+                        thong_bao = "Table's height or width haven't been chosen"
 
         pygame.display.flip()
 
