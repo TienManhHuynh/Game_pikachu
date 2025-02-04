@@ -842,6 +842,29 @@ def runGame(username, level, time_left, board):
     BASICFONT = pygame.font.SysFont('comicsansms', 70)
     LIVESFONT = pygame.font.SysFont('comicsansms', 45)
 
+    music_on_img = pygame.image.load('assets/Mute1.png').convert_alpha()
+    music_off_img = pygame.image.load('assets/Mute2.png').convert_alpha()
+    quit_img = pygame.image.load('assets/Save.png').convert_alpha()
+    hint_img = pygame.image.load('assets/HINT.png').convert_alpha()
+
+    button_width = 70  # Desired width
+    button_height = 70  # Desired height
+
+    music_on_img = pygame.transform.scale(music_on_img, (button_width, button_height))
+    music_off_img = pygame.transform.scale(music_off_img, (button_width, button_height))
+    quit_img = pygame.transform.scale(quit_img, (button_width, button_height))
+    hint_img = pygame.transform.scale(hint_img, (button_width, button_height))
+
+    button_x = WINDOWWIDTH - 100
+    spacing = 30  # Space between buttons
+
+    music_button_rect = music_on_img.get_rect(topleft=(button_x, 10))
+    quit_button_rect = quit_img.get_rect(topleft=(button_x, 10 + button_height + spacing))
+    hint_button_rect = hint_img.get_rect(topleft=(button_x, 10 + 2 * (button_height + spacing)))
+
+    music_button_img = music_on_img  # Initial state
+    manual_hint_display_until = 0  # Track manual hint display time
+
     if level is None: level = LEVEL = 1
     elif level > 5: showGameOverScreen(DISPLAYSURF)
     else: LEVEL = level
@@ -879,17 +902,25 @@ def runGame(username, level, time_left, board):
         drawTimeBar(DISPLAYSURF)
         drawLives(DISPLAYSURF)
 
-        if time.time() - STARTTIME > GAMETIME + TIMEBONUS:
+        DISPLAYSURF.blit(music_button_img, music_button_rect)
+        DISPLAYSURF.blit(quit_img, quit_button_rect)
+        DISPLAYSURF.blit(hint_img, hint_button_rect)
+
+        current_time = time.time()
+        if current_time - STARTTIME > GAMETIME + TIMEBONUS:
             LEVEL = LEVELMAX + 1
             break
-        if time.time() - lastTimeGetPoint >= GETHINTTIME:
-            drawHint(hint, DISPLAYSURF)
+        if current_time < manual_hint_display_until and hint is not None:
+            (y1, x1), (y2, x2) = hint
+            if mainBoard[y1][x1] != 0 and mainBoard[y2][x2] != 0:
+                drawHint(hint, DISPLAYSURF)
+            else:
+                # One or both hint boxes are no longer present.
+                hint = None
 
         for event in pygame.event.get():
-
             if event.type == QUIT:
-                # if user quit the game, save it
-                save_game(username, level, GAMETIME + TIMEBONUS - time.time() + STARTTIME, mainBoard)
+                save_game(username, level, GAMETIME + TIMEBONUS - (current_time - STARTTIME), mainBoard)
                 pygame.quit()
                 sys.exit()
             elif event.type == MOUSEMOTION:
@@ -897,29 +928,24 @@ def runGame(username, level, time_left, board):
             elif event.type == MOUSEBUTTONUP:
                 mousex, mousey = event.pos
                 mouseClicked = True
-            if event.type == KEYUP:
-                if event.key == K_n:
-                    boxy1, boxx1 = hint[0][0], hint[0][1]
-                    boxy2, boxx2 = hint[1][0], hint[1][1]
-                    mainBoard[boxy1][boxx1] = 0
-                    mainBoard[boxy2][boxx2] = 0
-                    TIMEBONUS += 1
-                    alterBoardWithLevel(mainBoard, boxy1, boxx1, boxy2, boxx2, LEVEL)
 
-                    if isGameComplete(mainBoard):
-                        drawBoard(mainBoard, DISPLAYSURF)
-                        save_game(username, level, GAMETIME + TIMEBONUS - time.time() + STARTTIME, mainBoard)
-                        runGame(username, LEVEL + 1, None, None)
-
-                    if not(mainBoard[boxy1][boxx1] != 0 and bfs(mainBoard, boxy1, boxx1, boxy2, boxx2)):
-                        hint = getHint(mainBoard)
-                        while not hint:
-                            pygame.time.wait(100)
-                            resetBoard(mainBoard)
-                            LIVES += -1
-                            if LIVES == 0:
-                                showGameOverScreen(DISPLAYSURF)
-                            hint = getHint(mainBoard)
+                # Handle button clicks
+                if music_button_rect.collidepoint(mousex, mousey):
+                    if pygame.mixer.music.get_busy():
+                        pygame.mixer.music.stop()
+                        music_button_img = music_off_img
+                    else:
+                        pygame.mixer.music.play(-1, 0.0)
+                        music_button_img = music_on_img
+                    mouseClicked = False
+                elif quit_button_rect.collidepoint(mousex, mousey):
+                    save_game(username, level, GAMETIME + TIMEBONUS - (current_time - STARTTIME), mainBoard)
+                    pygame.quit()
+                    sys.exit()
+                elif hint_button_rect.collidepoint(mousex, mousey):
+                    hint = getHint(mainBoard)
+                    manual_hint_display_until = time.time() + 3  # Show hint for 3 seconds
+                    mouseClicked = False
 
         boxx, boxy = getBoxAtPixel(mousex, mousey)
 
